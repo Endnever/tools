@@ -126,7 +126,7 @@ wheel_radius = 0.15125 	#units [m]
 abutment_area = 265.0	#units [mm^2]
 wheel_speed_rads = data[wheel_speed]*2*math.pi/60
 
-Wheel_Torque = motor_voltage * motor_eff * data['ConformMotorAmpsAvgDateTime']/wheel_speed_rads
+Wheel_Torque = motor_voltage * motor_eff * data['Conform.MotorAmpsAvg"Date/Time']/wheel_speed_rads
 
 Abut_Stress = Wheel_Torque/(wheel_radius * abutment_area)
 #print Abut_Stress
@@ -152,13 +152,13 @@ ax = fig.add_subplot(111)
 #colour = data['ConformAbutTemp1DateTime']
 
 #ax.scatter(data['DateTime'],Abut_Stress,label = 'Abutment Stress',s=1, c='b', color = 'k')
-ax.scatter(data['DateTime'], Abut_Stress,label = 'Abutment Stress Calculated', linewidth = 0, marker='o',s=2, c='k')
+ax.scatter(data['Date/Time'], Abut_Stress,label = 'Abutment Stress Calculated', linewidth = 0, marker='o',s=2, c='k')
 #ax.plot(data['DateTime'],Abut_Stress,label = 'Abutment Stress',linestyle = "-", color = 'k' )
 
-ax.plot(data['DateTime'],data['ConformWheelTempDateTime'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
-ax.plot(data['DateTime'],data['ConformAbutTemp1DateTime'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
+ax.plot(data['Date/Time'],data['Conform.WheelTemp1"Date/Time'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
+ax.plot(data['Date/Time'],data['Conform.AbutTemp1"Date/Time'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
 ax2 = ax.twinx()
-ax2.plot(data['DateTime'],data['ConformWheelSpeedAvgADateTime'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
+ax2.plot(data['Date/Time'],data['Conform.WheelSpeedAvgA"Date/Time'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
 #ax.plot(data['DateTime'],fill_height*10,label = 'Fill Height x 10(mm)',linestyle = "-", color = 'c' )
 
 
