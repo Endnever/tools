@@ -23,7 +23,7 @@ import pickle
 from mpl_toolkits.mplot3d import Axes3D
 
 
-#call(["clear"])
+
 
 
 #--------Get filename from user and append .txt to the filename---------
@@ -42,8 +42,7 @@ file_ext = ".txt"			#Gives the data file file extension. Can be changed to csv.
 
 datafile = file + file_ext	#Append .txt file extension to the filename
 
-if datafile == "test.txt":
-	print('Using default test data from test.txt')
+
 
 
 
@@ -54,10 +53,11 @@ if datafile == "test.txt":
 
 data = pd.read_table(datafile)
 
-motor_amps = 'ConformMotorAmpsAvgDateTime'
-wheel_temp = 'ConformWheelTempDateTime'
-abut_temp = 'ConformAbutTemp1DateTime'
 
+motor_amps = 'Conform.MotorAmpsAvg"Date/Time'
+wheel_temp = 'Conform.WheelTemp1"Date/Time'
+abut_temp = 'Conform.AbutTemp1"Date/Time'
+wheel_col = 'Conform.WheelSpeedAvgA"Date/Time'
 #If date/time column is in excel format, convert it to seconds from the start of the test.
 if data['Date/Time'][0]>100:
 	seconds = np.zeros(len(data['Date/Time']))
@@ -68,50 +68,42 @@ if data['Date/Time'][0]>100:
 
 #print data['ConformWheelSpeedAvgADateTime']
 
-#-------Give default array headings if the file is test.txt-----
-
-'''wheel_speed = ""
-motor_amps = ""
-wheel_temp = ""
-abut_temp = ""'''
-
-'''if datafile == 'test.txt':'''
-wheel_speed = 'Conform.WheelSpeedAvgB"Date/Time'
-motor_amps = 'Conform.MotorAmpsAvg"Date/Time'
-wheel_temp = 'Conform.WheelTemp"DateTime'
-abut_temp = 'Conform.AbutTemp1"Date/Time'
 
 
-'''#If the datafile is in an old format style ask the user for the heading names so that they can still be plotted without having to go back into the source code. This can be modified in the future to change the field headings automatically depending on if isfilenew = Yes or isfilenew = No.
+
+#If the datafile is in an old format style ask the user for the heading names so that they can still be plotted without having to go back into the source code. This can be modified in the future to change the field headings automatically depending on if isfilenew = Yes or isfilenew = No.
 if isfilenew == 'No' or 'no' or 'n' or 'N':
 	# If the data file is old (ie. isfilenew = No) ask the user to enter the field headings. If left blank the headings will default back to what the new headings should be.
-	if not wheel_speed:
+	if not wheel_col:
 		print('Please enter the name of the wheel speed column heading (default: ConformWheelSpeedAvgA"Date/Time\n')
-		wheel_speed = input()
+		wheel_col = input()
 	else:
-		wheel_speed = 'ConformWheelSpeedAvgADateTime'
-		print("Using heading for wheel speed: \t%s") % wheel_speed
+		wheel_col = 'Conform.WheelSpeedAvgA"Date/Time'
+		print("Using heading for wheel speed: \t%s" % wheel_col)
 
 	if not motor_amps:
 		print('\nPlease enter the name of the motor amps column heading (default: ConformMotorAmpsAvgDateTime\n')
 		motor_amps = input()
 	else:
-		motor_amps = 'ConformMotorAmpsAvgDateTime'
-		print("Using heading for motor amps: \t%s") % motor_amps
+		motor_amps = 'Conform.MotorAmpsAvg"Date/Time'
+		print("Using heading for motor amps: \t%s" % motor_amps)
 
 	if not wheel_temp:
 		print('\nPlease enter the name of the wheel temperature column heading (default: ConformWheelTempDateTime\n')
 		wheel_temp = input()
 	else:
-		wheel_temp = 'ConformWheelTempDateTime'
-		print("Using heading for wheel temperature: \t%s") % wheel_temp
+		wheel_temp = 'Conform.WheelTemp1"Date/Time'
+		print("Using heading for wheel temperature: \t%s" % wheel_temp)
 
 	if not abut_temp:
 		print('\nPlease enter the name of the abutment temperature column heading (default: ConformAbutTemp1DateTime\n')
 		abut_temp = input()
 	else:
-		abut_temp = 'ConformAbutTemp1DateTime'
-		print("Using heading for abutment temperature: \t%s") % abut_temp'''
+		abut_temp = 'Conform.AbutTemp1"Date/Time'
+		print("Using heading for abutment temperature: \t%s" % abut_temp)
+        
+        
+data = data.rename(columns={ motor_amps : 'motor_current_amps', wheel_temp : 'wheel_temp_c', abut_temp : 'abut_temp_c', wheel_col : 'wheel_speed'}) 
 
 #---------Calculate Abutment Stress--------
 def wheel_motor(x,y):
@@ -124,9 +116,9 @@ motor_voltage = 415.0	#units [V]
 motor_eff = 0.8			#units [fractional]
 wheel_radius = 0.15125 	#units [m]
 abutment_area = 265.0	#units [mm^2]
-wheel_speed_rads = data[wheel_speed]*2*math.pi/60
+wheel_speed_rads = data['wheel_speed']*2*math.pi/60
 
-Wheel_Torque = motor_voltage * motor_eff * data['Conform.MotorAmpsAvg"Date/Time']/wheel_speed_rads
+Wheel_Torque = motor_voltage * motor_eff * data['motor_current_amps']/wheel_speed_rads
 
 Abut_Stress = Wheel_Torque/(wheel_radius * abutment_area)
 #print Abut_Stress
@@ -155,10 +147,10 @@ ax = fig.add_subplot(111)
 ax.scatter(data['Date/Time'], Abut_Stress,label = 'Abutment Stress Calculated', linewidth = 0, marker='o',s=2, c='k')
 #ax.plot(data['DateTime'],Abut_Stress,label = 'Abutment Stress',linestyle = "-", color = 'k' )
 
-ax.plot(data['Date/Time'],data['Conform.WheelTemp1"Date/Time'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
-ax.plot(data['Date/Time'],data['Conform.AbutTemp1"Date/Time'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
+ax.plot(data['Date/Time'],data['wheel_temp_c'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
+ax.plot(data['Date/Time'],data['abut_temp_c'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
 ax2 = ax.twinx()
-ax2.plot(data['Date/Time'],data['Conform.WheelSpeedAvgA"Date/Time'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
+ax2.plot(data['Date/Time'],data['wheel_speed'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
 #ax.plot(data['DateTime'],fill_height*10,label = 'Fill Height x 10(mm)',linestyle = "-", color = 'c' )
 
 
