@@ -2,6 +2,7 @@
 '''This is a python script to plot the recorded data from the BWE Ltd. Conform 315i machine. It takes the raw  file from the machine and will give two plots relevant to understanding how the machine responded during the extrusion. Data analysed from this script is particularly useful when Conforming metal particulates
 '''
 
+import dateutil
 import time
 '''from Tkinter import *'''
 import csv, sys
@@ -38,7 +39,7 @@ else:
 	print("Is the file in the new format?:")  #If a filename is entered then ask if it is in the old format - if it is then ask the user (further down the code) for the correct field headings for the plot
 	isfilenew = input()
 
-file_ext = ".txt"			#Gives the data file file extension. Can be changed to csv.
+file_ext = ".csv"			#Gives the data file file extension. Can be changed to csv.
 
 datafile = file + file_ext	#Append .txt file extension to the filename
 
@@ -51,24 +52,39 @@ datafile = file + file_ext	#Append .txt file extension to the filename
 
 '''data = np.genfromtxt(datafile, dtype=None, delimiter='\t', names=True)''' '''initialise numpy array for holding data'''
 
-data = pd.read_table(datafile)
+data = pd.read_csv(datafile)
 
 
-motor_amps = 'Conform.MotorAmpsAvg"Date/Time'
-wheel_temp = 'Conform.WheelTemp1"Date/Time'
-abut_temp = 'Conform.AbutTemp1"Date/Time'
-wheel_col = 'Conform.WheelSpeedAvgA"Date/Time'
+motor_amps = 'Conform Motor Current (Amps)'
+wheel_temp = 'Wheel Temperature (°C)'
+abut_temp = 'Abutment 1 Temperature (°C)'
+wheel_col = 'Conform Wheel Speed (rpm)'
 #If date/time column is in excel format, convert it to seconds from the start of the test.
-if data['Date/Time'][0]>100:
-	seconds = np.zeros(len(data['Date/Time']))
-	seconds = (data['Date/Time']-data['Date/Time'][0])*3600*24
-	data['Date/Time'] = seconds
+#if data['Date/Time'][0]>100:
+#	seconds = np.zeros(len(data['Date/Time']))
+#	seconds = (data['Date/Time']-data['Date/Time'][0])*3600*24
+#	data['Date/Time'] = seconds
 
 #print data.dtype.names		#Print column headings to check their names
 
 #print data['ConformWheelSpeedAvgADateTime']
 
+IS08601=data['Timestamp']
 
+timeplaceholder=[]
+
+for i in IS08601:
+    dateformat=dateutil.parser.parse(i)
+    timeplaceholder.append(dateformat)
+   
+
+data['Timestamp']=timeplaceholder
+data['delta_t'] = ( data['Timestamp'] - data['Timestamp'].iloc[0])
+data['elapsed_seconds'] = data['delta_t'].dt.total_seconds()
+
+
+
+print (data['Timestamp'])
 
 
 #If the datafile is in an old format style ask the user for the heading names so that they can still be plotted without having to go back into the source code. This can be modified in the future to change the field headings automatically depending on if isfilenew = Yes or isfilenew = No.
@@ -78,33 +94,34 @@ if isfilenew == 'No' or 'no' or 'n' or 'N':
 		print('Please enter the name of the wheel speed column heading (default: ConformWheelSpeedAvgA"Date/Time\n')
 		wheel_col = input()
 	else:
-		wheel_col = 'Conform.WheelSpeedAvgA"Date/Time'
+		wheel_col = 'Conform Wheel Speed (rpm)'
 		print("Using heading for wheel speed: \t%s" % wheel_col)
 
 	if not motor_amps:
 		print('\nPlease enter the name of the motor amps column heading (default: ConformMotorAmpsAvgDateTime\n')
 		motor_amps = input()
 	else:
-		motor_amps = 'Conform.MotorAmpsAvg"Date/Time'
+		motor_amps = 'Conform Motor Current (Amps)'
 		print("Using heading for motor amps: \t%s" % motor_amps)
 
 	if not wheel_temp:
 		print('\nPlease enter the name of the wheel temperature column heading (default: ConformWheelTempDateTime\n')
 		wheel_temp = input()
 	else:
-		wheel_temp = 'Conform.WheelTemp1"Date/Time'
+		wheel_temp = 'Wheel Temperature (°C)'
 		print("Using heading for wheel temperature: \t%s" % wheel_temp)
 
 	if not abut_temp:
 		print('\nPlease enter the name of the abutment temperature column heading (default: ConformAbutTemp1DateTime\n')
 		abut_temp = input()
 	else:
-		abut_temp = 'Conform.AbutTemp1"Date/Time'
+		abut_temp = 'Abutment 1 Temperature (°C)'
 		print("Using heading for abutment temperature: \t%s" % abut_temp)
         
         
-data = data.rename(columns={ motor_amps : 'motor_current_amps', wheel_temp : 'wheel_temp_c', abut_temp : 'abut_temp_c', wheel_col : 'wheel_speed'}) 
+data = data.rename(columns={ motor_amps : 'motor_current_amps', wheel_temp : 'wheel_temp_c', abut_temp : 'abut_temp_c', wheel_col : 'wheel_speed', 'elapsed_seconds' : 'elapsed_seconds'}) 
 
+data.to_csv('example.csv', index=False)
 #---------Calculate Abutment Stress--------
 def wheel_motor(x,y):
 	try:
@@ -144,13 +161,13 @@ ax = fig.add_subplot(111)
 #colour = data['ConformAbutTemp1DateTime']
 
 #ax.scatter(data['DateTime'],Abut_Stress,label = 'Abutment Stress',s=1, c='b', color = 'k')
-ax.scatter(data['Date/Time'], Abut_Stress,label = 'Abutment Stress Calculated', linewidth = 0, marker='o',s=2, c='k')
+ax.scatter(data['elapsed_seconds'], Abut_Stress,label = 'Abutment Stress Calculated', linewidth = 0, marker='o',s=2, c='k')
 #ax.plot(data['DateTime'],Abut_Stress,label = 'Abutment Stress',linestyle = "-", color = 'k' )
 
-ax.plot(data['Date/Time'],data['wheel_temp_c'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
-ax.plot(data['Date/Time'],data['abut_temp_c'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
+ax.plot(data['elapsed_seconds'],data['wheel_temp_c'],label = 'Wheel Temperature',linestyle = "-", color = 'b' )
+ax.plot(data['elapsed_seconds'],data['abut_temp_c'],label = 'Abutment Temperature',linestyle = "-", color = 'g' )
 ax2 = ax.twinx()
-ax2.plot(data['Date/Time'],data['wheel_speed'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
+ax2.plot(data['elapsed_seconds'],data['wheel_speed'],label = 'Wheel Speed',linestyle = "-", color = 'r' )
 #ax.plot(data['DateTime'],fill_height*10,label = 'Fill Height x 10(mm)',linestyle = "-", color = 'c' )
 
 
