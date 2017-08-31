@@ -21,7 +21,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import Slider, Button, RadioButtons
 from matplotlib.ticker import NullFormatter
 import pickle
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D                                      # importing libraries - not all are used
 
 
 
@@ -48,43 +48,35 @@ datafile = file + file_ext	#Append .txt file extension to the filename
 
 
 
-#--------Transfer data from the data file into numpy array---------
+#--------Transfer data from the data file into a pandas dataframe---------
 
 '''data = np.genfromtxt(datafile, dtype=None, delimiter='\t', names=True)''' '''initialise numpy array for holding data'''
 
-data = pd.read_csv(datafile)
+data = pd.read_csv(datafile) # for reading .csv files. use "pd.read_table" for .tsv files
 
 
-motor_amps = 'Conform Motor Current (Amps)'
+motor_amps = 'Conform Motor Current (Amps)' #initialising variable names for name-based column referencing in a dataframe
 wheel_temp = 'Wheel Temperature (°C)'
 abut_temp = 'Abutment 1 Temperature (°C)'
 wheel_col = 'Conform Wheel Speed (rpm)'
-#If date/time column is in excel format, convert it to seconds from the start of the test.
-#if data['Date/Time'][0]>100:
-#	seconds = np.zeros(len(data['Date/Time']))
-#	seconds = (data['Date/Time']-data['Date/Time'][0])*3600*24
-#	data['Date/Time'] = seconds
 
-#print data.dtype.names		#Print column headings to check their names
 
-#print data['ConformWheelSpeedAvgADateTime']
 
-IS08601=data['Timestamp']
+IS08601=data['Timestamp']  #timestamp in original data is in ISO8601 datetime format
 
 timeplaceholder=[]
 
-for i in IS08601:
-    dateformat=dateutil.parser.parse(i)
+for i in IS08601:                                 #for loop for parsing each entry in the timestamp series as a datetime object
+    dateformat=dateutil.parser.parse(i)          #
     timeplaceholder.append(dateformat)
    
 
 data['Timestamp']=timeplaceholder
-data['delta_t'] = ( data['Timestamp'] - data['Timestamp'].iloc[0])
+data['delta_t'] = ( data['Timestamp'] - data['Timestamp'].iloc[0])  #converting datetime object to elapsed seconds
 data['elapsed_seconds'] = data['delta_t'].dt.total_seconds()
 
 
 
-print (data['Timestamp'])
 
 
 #If the datafile is in an old format style ask the user for the heading names so that they can still be plotted without having to go back into the source code. This can be modified in the future to change the field headings automatically depending on if isfilenew = Yes or isfilenew = No.
@@ -119,9 +111,9 @@ if isfilenew == 'No' or 'no' or 'n' or 'N':
 		print("Using heading for abutment temperature: \t%s" % abut_temp)
         
         
-data = data.rename(columns={ motor_amps : 'motor_current_amps', wheel_temp : 'wheel_temp_c', abut_temp : 'abut_temp_c', wheel_col : 'wheel_speed', 'elapsed_seconds' : 'elapsed_seconds'}) 
+data = data.rename(columns={ motor_amps : 'motor_current_amps', wheel_temp : 'wheel_temp_c', abut_temp : 'abut_temp_c', wheel_col : 'wheel_speed', 'elapsed_seconds' : 'elapsed_seconds'}) #renaming column headings to be consistent
 
-data.to_csv('example.csv', index=False)
+
 #---------Calculate Abutment Stress--------
 def wheel_motor(x,y):
 	try:
@@ -140,6 +132,9 @@ Wheel_Torque = motor_voltage * motor_eff * data['motor_current_amps']/wheel_spee
 Abut_Stress = Wheel_Torque/(wheel_radius * abutment_area)
 #print Abut_Stress
 
+outfile=data.filter(['Timestamp','elapsed_seconds','motor_current_amps', 'wheel_temp_c', 'abut_temp_c', 'wheel_speed'], axis=1) #saves an output file with new format data.
+outfile['abut_stress']=Abut_Stress
+outfile.to_csv('outfile.csv', index=False)
 
 #---------------Calculate the grip length---------------
 # power law function
